@@ -6,6 +6,12 @@ M._currentSesh = "/noSelectedSession."
 
 local sessionRootDir = vim.fn.expand("~/nvim_sessions")
 local sessionDir = sessionRootDir .. "/main/"
+
+if vim.fn.has("Win32") == 1 then
+    sessionRootDir = vim.fn.exp("~\\nvim_sessions")
+    sessionDir = sessionRootDir .. "\\main\\"
+end
+
 local defaultKeymaps = { overwrite = "<leader>as", unique = "<leader>au", saveMenu = "<leader>aa" }
 
 local function setupRootDirectory(session_root_directory)
