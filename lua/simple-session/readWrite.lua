@@ -59,6 +59,10 @@ M.makeUniqueSession = function(sessionDir)
     nameInput =
         vim.fn.input({ cancelreturn = "abort", prompt = "Type a unique name or no name to save incrementally: " })
 
+    if nameInput == "abort" then
+        return
+    end
+
     if M._currentSesh == "/noSelectedSession." then
         inSession = false
     else

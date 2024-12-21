@@ -1,3 +1,9 @@
+local function deleteCurrentWindow()
+    local buf = vim.fn.bufnr()
+    vim.cmd.q()
+    vim.api.nvim_buf_delete(buf, {})
+end
+
 local function getBuffersForDelete()
     local buffersForDelete = {}
     local bufsList = vim.api.nvim_list_bufs()
@@ -29,9 +35,7 @@ end
 
 local function setUIKeymaps(sessionDir)
     vim.keymap.set("n", "<esc>", function()
-        local buf = vim.fn.bufnr()
-        vim.cmd.q()
-        vim.api.nvim_buf_delete(buf, {})
+        deleteCurrentWindow()
     end, { buffer = true })
 
     vim.keymap.set("n", "D", function()
@@ -49,6 +53,7 @@ local function setUIKeymaps(sessionDir)
         local selectedDir = sessionDir .. vim.fn.getline(".") .. ".vim"
         if vim.fn.filereadable(selectedDir) == 1 then
             M._currentSesh = selectedDir
+            M.setSessionDir(sessionDir)
             vim.cmd.q()
             deleteBuffers(getBuffersForDelete())
             vim.cmd.source(selectedDir)
@@ -56,6 +61,7 @@ local function setUIKeymaps(sessionDir)
             print("Not a valid file")
         end
     end, { buffer = true })
+
     vim.keymap.set("n", "U", function()
         local buf = vim.fn.bufnr()
         vim.cmd.q()
@@ -66,11 +72,21 @@ local function setUIKeymaps(sessionDir)
 end
 
 local function setDirectoryListUIKeymaps(sessionDir)
-    vim.keymap.set("n", "<esc>", function()
-        local buf = vim.fn.bufnr()
-        vim.cmd.q()
-        vim.api.nvim_buf_delete(buf, {})
+    vim.keymap.set("n", "Y", function()
+        local selectedDir = sessionDir .. "/" .. vim.fn.getline(".") .. "/"
+        if vim.fn.isdirectory(selectedDir) == 1 then
+            M._currentSesh = "/noSelectedSession."
+            M.setSessionDir(selectedDir)
+            vim.api.nvim_buf_set_lines(0, 2, 3, false, { "Current Directory: " .. vim.fn.getline(".") })
+        else
+            print("Not a valid Directory")
+        end
     end, { buffer = true })
+
+    vim.keymap.set("n", "<esc>", function()
+        deleteCurrentWindow()
+    end, { buffer = true })
+
     vim.keymap.set("n", "D", function()
         local selectedDir = sessionDir .. "/" .. vim.fn.getline(".")
         if vim.fn.isdirectory(selectedDir) == 1 then
@@ -84,16 +100,13 @@ local function setDirectoryListUIKeymaps(sessionDir)
     vim.keymap.set("n", "<CR>", function()
         local selectedDir = sessionDir .. "/" .. vim.fn.getline(".") .. "/"
         if vim.fn.isdirectory(selectedDir) == 1 then
-            local buf = vim.fn.bufnr()
-            vim.cmd.q()
-            vim.api.nvim_buf_delete(buf, {})
-            M._currentSesh = "/noSelectedSession."
+            deleteCurrentWindow()
             M.openSessionList(selectedDir)
-            M.changeSessionDir(selectedDir)
         else
-            print("Not a valid file" .. selectedDir)
+            print("Not a valid directory")
         end
     end, { buffer = true })
+
     vim.keymap.set("n", "A", function()
         local newDirInput = vim.fn.input({ cancelreturn = "none", prompt = "Please input a dir name: " })
         local newDir = sessionDir .. "/" .. newDirInput
@@ -104,13 +117,17 @@ end
 
 M.openSessionList = function(sessionDir)
     local fileList = vim.fn.globpath(vim.fn.expand(sessionDir), "*.vim", false, true)
-    local currentSeshStripped = M._currentSesh:gsub("^(.*[/\\])", ""):match("^(.*[.])"):sub(1, -2)
-    local root = M._currentSesh:gsub(currentSeshStripped, ""):sub(1, -6):gsub("^(.*[/\\])", "")
+    local currentSeshStripped = M._currentSesh:gsub("^(.*[/\\])", "")
+    local directory = M.getSessionDir():sub(1, -2):gsub("^(.*[/\\])", "")
+    if M._currentSesh == "/noSelectedSession." then
+        directory = ""
+        currentSeshStripped = "No Selected Session"
+    end
 
     local instructions = {
         "Enter to select, Esc to exit, D to delete",
         "U to view Directories",
-        "Current Session: " .. root .. "/" .. currentSeshStripped,
+        "Current Session: " .. directory .. "/" .. currentSeshStripped,
         "---------------",
     }
     for key in ipairs(fileList) do
@@ -146,11 +163,12 @@ end
 
 M.openSessionDirectoriesList = function(sessionDir)
     local fileList = vim.fn.globpath(sessionDir, "*", false, true)
+    local currentDirectory = M.getSessionDir():sub(1, -2):gsub("^(.*[/\\])", "")
 
     local instructions = {
-        "Session Directories List:",
         "Enter to select, Esc to exit",
-        "D to delete, A to add",
+        "D to delete, A to add, Y to select directory",
+        "Current Directory: " .. currentDirectory,
         "---------------",
     }
 

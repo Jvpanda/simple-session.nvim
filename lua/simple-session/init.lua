@@ -4,8 +4,8 @@ require("simple-session.getSessionWithUI")
 
 M._currentSesh = "/noSelectedSession."
 
-local sessionRootDir = vim.fn.expand("~/nvim_sessions/")
-local sessionDir = sessionRootDir .. "main/"
+local sessionRootDir = vim.fn.expand("~/nvim_sessions")
+local sessionDir = sessionRootDir .. "/main/"
 local defaultKeymaps = { overwrite = "<leader>as", unique = "<leader>au", saveMenu = "<leader>aa" }
 
 local function setupRootDirectory(session_root_directory)
@@ -48,11 +48,14 @@ local function setupKeymaps(keymaps)
     vim.keymap.set("n", "<leader>a", "", { desc = "Simple Session" })
 end
 
-M.changeSessionDir = function(opt)
+M.setSessionDir = function(opt)
     sessionDir = opt
 end
-M.printSession = function()
-    print(sessionDir)
+M.getRootSession = function()
+    return sessionRootDir
+end
+M.getSessionDir = function()
+    return sessionDir
 end
 
 M.setup = function(opts)
@@ -66,6 +69,3 @@ M.setup = function(opts)
 end
 
 return M
-
--- TODO, just figure out how opts work, but other than that it's great
--- Create the ability to have and switch between multiple directories
