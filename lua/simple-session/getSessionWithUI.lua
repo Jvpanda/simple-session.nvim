@@ -1,3 +1,5 @@
+local selectedUISessionDir = "nil"
+
 local function deleteCurrentWindow()
     local buf = vim.fn.bufnr()
     vim.cmd.q()
@@ -57,6 +59,11 @@ local function setUIKeymaps(sessionDir)
             vim.cmd.q()
             deleteBuffers(getBuffersForDelete())
             vim.cmd.source(selectedDir)
+        elseif vim.fn.getline(".") == "----Press Enter Here To Change Dir----" then
+            M._currentSesh = "/noSelectedSession."
+            M.setSessionDir(selectedUISessionDir)
+            deleteCurrentWindow()
+            print("Session Directory has been set to: " .. selectedUISessionDir)
         else
             print("Not a valid file")
         end
@@ -101,7 +108,9 @@ local function setDirectoryListUIKeymaps(sessionDir)
         local selectedDir = sessionDir .. "/" .. vim.fn.getline(".") .. "/"
         if vim.fn.isdirectory(selectedDir) == 1 then
             deleteCurrentWindow()
-            M.openSessionList(selectedDir)
+            M.openSessionList(selectedDir, "----Press Enter Here To Change Dir----")
+            selectedUISessionDir = selectedDir
+            print(selectedUISessionDir)
         else
             print("Not a valid directory")
         end
@@ -115,7 +124,8 @@ local function setDirectoryListUIKeymaps(sessionDir)
     end, { buffer = true })
 end
 
-M.openSessionList = function(sessionDir)
+M.openSessionList = function(sessionDir, instructionsParam)
+    instructionsParam = instructionsParam or "---------------"
     local fileList = vim.fn.globpath(vim.fn.expand(sessionDir), "*.vim", false, true)
     local currentSeshStripped = M._currentSesh:gsub("^(.*[/\\])", "")
     local directory = M.getSessionDir():sub(1, -2):gsub("^(.*[/\\])", "")
@@ -128,7 +138,7 @@ M.openSessionList = function(sessionDir)
         "Enter to select, Esc to exit, D to delete",
         "U to view Directories",
         "Current Session: " .. directory .. "/" .. currentSeshStripped,
-        "---------------",
+        instructionsParam,
     }
     for key in ipairs(fileList) do
         fileList[key] = fileList[key]:gsub("^(.*[/\\])", ""):match("^(.*[.])"):sub(1, -2)
@@ -156,7 +166,7 @@ M.openSessionList = function(sessionDir)
     -- Set buffer content (list of files)
     vim.api.nvim_buf_set_lines(buf, 0, 4, false, instructions)
     vim.api.nvim_buf_set_lines(buf, 4, -1, false, fileList)
-    vim.fn.cursor(5, 1)
+    vim.fn.cursor(4, 1)
 
     setUIKeymaps(sessionDir)
 end
