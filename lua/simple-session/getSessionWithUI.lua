@@ -1,5 +1,11 @@
 local selectedUISessionDir = "nil"
 
+local function editStatusLine()
+    local currentSeshStripped = M._currentSesh:gsub("^(.*[/\\])", "")
+    local directory = M.getSessionDir():sub(1, -2):gsub("^(.*[/\\])", "")
+    vim.opt.statusline = "File: " .. "%t" .. " | Session: " .. directory .. "/" .. currentSeshStripped
+end
+
 local function deleteCurrentWindow()
     local buf = vim.fn.bufnr()
     vim.cmd.q()
@@ -59,11 +65,13 @@ local function setUIKeymaps(sessionDir)
             vim.cmd.q()
             deleteBuffers(getBuffersForDelete())
             vim.cmd.source(selectedDir)
+            editStatusLine()
         elseif vim.fn.getline(".") == "----Press Enter Here To Change Dir----" then
             M._currentSesh = "/noSelectedSession."
             M.setSessionDir(selectedUISessionDir)
             deleteCurrentWindow()
             print("Session Directory has been set to: " .. selectedUISessionDir)
+            editStatusLine()
         else
             print("Not a valid file")
         end
