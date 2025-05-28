@@ -1,11 +1,5 @@
 local selectedUISessionDir = "nil"
 
-local function editStatusLine()
-    local currentSeshStripped = M._currentSesh:gsub("^(.*[/\\])", "")
-    local directory = M.getSessionDir():sub(1, -2):gsub("^(.*[/\\])", "")
-    vim.opt.statusline = "File: " .. "%t" .. " | Session: " .. directory .. "/" .. currentSeshStripped
-end
-
 local function deleteCurrentWindow()
     local buf = vim.fn.bufnr()
     vim.cmd.q()
@@ -43,7 +37,11 @@ end
 
 local function setUIKeymaps(sessionDir)
     vim.keymap.set("n", "<esc>", function()
-        deleteCurrentWindow()
+        local buf = vim.fn.bufnr()
+        vim.cmd.q()
+        vim.api.nvim_buf_delete(buf, {})
+        local sessionStripped = sessionDir:match("^(.*[/\\])"):sub(1, -2):match("^(.*[/\\])"):sub(1, -2)
+        M.openSessionDirectoriesList(sessionStripped)
     end, { buffer = true })
 
     vim.keymap.set("n", "D", function()
@@ -65,24 +63,16 @@ local function setUIKeymaps(sessionDir)
             vim.cmd.q()
             deleteBuffers(getBuffersForDelete())
             vim.cmd.source(selectedDir)
-            editStatusLine()
-        elseif vim.fn.getline(".") == "----Press Enter Here To Change Dir----" then
+            M.updateStatusLine()
+        elseif vim.fn.getline(".") == "----Press Enter Here To Select Dir----" then
             M._currentSesh = "/noSelectedSession."
             M.setSessionDir(selectedUISessionDir)
             deleteCurrentWindow()
             print("Session Directory has been set to: " .. selectedUISessionDir)
-            editStatusLine()
+            M.updateStatusLine()
         else
             print("Not a valid file")
         end
-    end, { buffer = true })
-
-    vim.keymap.set("n", "U", function()
-        local buf = vim.fn.bufnr()
-        vim.cmd.q()
-        vim.api.nvim_buf_delete(buf, {})
-        local sessionStripped = sessionDir:match("^(.*[/\\])"):sub(1, -2):match("^(.*[/\\])"):sub(1, -2)
-        M.openSessionDirectoriesList(sessionStripped)
     end, { buffer = true })
 end
 
@@ -116,7 +106,7 @@ local function setDirectoryListUIKeymaps(sessionDir)
         local selectedDir = sessionDir .. "/" .. vim.fn.getline(".") .. "/"
         if vim.fn.isdirectory(selectedDir) == 1 then
             deleteCurrentWindow()
-            M.openSessionList(selectedDir, "----Press Enter Here To Change Dir----")
+            M.openSessionList(selectedDir, "----Press Enter Here To Select Dir----")
             selectedUISessionDir = selectedDir
             print(selectedUISessionDir)
         else
@@ -143,8 +133,8 @@ M.openSessionList = function(sessionDir, instructionsParam)
     end
 
     local instructions = {
-        "Enter to select, Esc to exit, D to delete",
-        "U to view Directories",
+        "Enter to select, D to delete",
+        "Esc to go back to the directory",
         "Current Session: " .. directory .. "/" .. currentSeshStripped,
         instructionsParam,
     }

@@ -46,6 +46,8 @@ M.overwriteSession = function(sessionDir)
     M.writeShada(shadaSavePath)
     vim.cmd({ cmd = "mksession", args = { savePath }, bang = true })
     M._currentSesh = savePath
+    M.setSessionDir(sessionDir)
+    M.updateStatusLine()
     print("save path: " .. savePath)
 end
 
@@ -88,6 +90,8 @@ M.makeUniqueSession = function(sessionDir)
     M.writeShada(shadaSavePath)
     vim.cmd({ cmd = "mksession", args = { savePath }, bang = true })
     M._currentSesh = savePath
+    M.setSessionDir(sessionDir)
+    M.updateStatusLine()
     print("save path: " .. savePath)
 end
 
@@ -104,4 +108,4 @@ M.readShada = function(filePath)
     vim.cmd({ cmd = "rshada", args = { filePath }, bang = true })
 end
 
-return M
+return

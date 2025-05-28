@@ -8,6 +8,15 @@ local sessionRootDir = vim.fn.expand("~/nvim_sessions")
 local sessionDir = sessionRootDir .. "/main/"
 
 local defaultKeymaps = { overwrite = "<leader>as", unique = "<leader>au", saveMenu = "<leader>aa" }
+local useCustomStatus = false
+
+M.updateStatusLine = function()
+    if useCustomStatus then
+        local currentSeshStripped = M._currentSesh:gsub("^(.*[/\\])", "")
+        local directory = M.getSessionDir():sub(1, -2):gsub("^(.*[/\\])", "")
+        vim.opt.statusline = "File: " .. "%t" .. " | Session: " .. directory .. "/" .. currentSeshStripped
+    end
+end
 
 local function setupRootDirectory(session_root_directory)
     sessionRootDir = session_root_directory
@@ -34,7 +43,7 @@ local function setupKeymaps(keymaps)
         if M._currentSesh == "/noSelectedSession." then
             M.openSessionDirectoriesList(sessionRootDir)
         else
-            M.openSessionList(sessionDir)
+            M.openSessionList(sessionDir, "----Press Enter Here To Select Dir----")
         end
     end, { desc = "Choose a session to return to" })
 
@@ -66,6 +75,9 @@ M.setup = function(opts)
     end
     if opts.keymaps then
         setupKeymaps(opts.keymaps)
+    end
+    if opts.useStatusLine then
+        useCustomStatus = true
     end
 end
 
