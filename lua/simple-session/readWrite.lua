@@ -1,18 +1,5 @@
-local function getCurrentIncrementValue(filePath, incrementAmount, filetype)
-    local i = 0
-    local pathTrimmed = filePath:match("^(.*_)")
-    while i < 100 do
-        if vim.fn.filereadable(pathTrimmed .. i .. filetype) == 0 then
-            -- base case if a file doesn't exist
-            if i == 0 then
-                return pathTrimmed .. i .. filetype
-            end
-            return pathTrimmed .. i - 1 + incrementAmount .. filetype
-        end
-        i = i + 1
-    end
-    return filePath .. "_error"
-end
+local M = {}
+local SDM = require("simple-session.sessionDirectoryManager")
 
 local function delAllMarks()
     local bufs = vim.api.nvim_list_bufs()
@@ -27,72 +14,46 @@ local function delAllMarks()
     end
 end
 
-M.overwriteSession = function(sessionDir)
-    local savePath = sessionDir .. vim.fn.expand("%:p:h:t") .. "_0.vim"
-    local shadaSavePath = sessionDir .. "shada/" .. vim.fn.expand("%:p:h:t") .. "_0.shada"
-
+M.overwriteSession = function()
     -- If there is no session we use the dir name as the session name
     -- If a dir name exists, we will find the latest increment of it and overwrite that
-    -- Otherwise we just overwrite the current session
-    if M._currentSesh == "/noSelectedSession." then
-        savePath = getCurrentIncrementValue(savePath, 0, ".vim")
-        shadaSavePath = getCurrentIncrementValue(shadaSavePath, 0, ".shada")
-    else
-        savePath = M._currentSesh
-        shadaSavePath = sessionDir .. "shada/" .. M._currentSesh:gsub("^(.*[/\\])", 0):sub(2, -5) .. ".shada"
+    if SDM.isSessionSelected() == false then
+        SDM.currentSessionName = vim.fn.expand("%:p:h:t")
     end
 
     vim.cmd.wall()
-    M.writeShada(shadaSavePath)
-    vim.cmd({ cmd = "mksession", args = { savePath }, bang = true })
-    M._currentSesh = savePath
-    M.setSessionDir(sessionDir)
-    M.updateStatusLine()
-    print("save path: " .. savePath)
+    M.writeShada(SDM.getFullShadaPath())
+    vim.cmd({ cmd = "mksession", args = { SDM.getFullSessionPath() }, bang = true })
+    print("Save Path: " .. SDM.getFullSessionPath())
 end
 
-M.makeUniqueSession = function(sessionDir)
-    local savePath = sessionDir .. vim.fn.expand("%:p:h:t") .. "_0.vim"
-    local shadaSavePath = sessionDir .. "shada/" .. vim.fn.expand("%:p:h:t") .. "_0.shada"
-    local nameInput = ""
-    local inSession = false
-    print(savePath)
-
-    nameInput =
+M.makeUniqueSession = function()
+    local increment = 0
+    local nameInput =
         vim.fn.input({ cancelreturn = "abort", prompt = "Type a unique name or no name to save incrementally: " })
 
     if nameInput == "abort" then
+        print("No session created")
         return
     end
 
-    if M._currentSesh == "/noSelectedSession." then
-        inSession = false
-    else
-        inSession = true
-    end
+    nameInput = nameInput .. "_0.pp"
 
-    if nameInput == "" and inSession == false then
-        savePath = getCurrentIncrementValue(savePath, 1, ".vim")
-        shadaSavePath = getCurrentIncrementValue(shadaSavePath, 1, ".shada")
-    elseif nameInput == "" and inSession == true then
-        savePath = getCurrentIncrementValue(M._currentSesh, 1, ".vim")
-        shadaSavePath = getCurrentIncrementValue(
-            sessionDir .. "shada/" .. M._currentSesh:gsub("^(.*[/\\])", "") .. ".shada",
-            1,
-            ".shada"
-        )
+    if nameInput == "_0.pp" and SDM.isSessionSelected() == false then
+        SDM.currentSessionName = vim.fn.expand("%:p:h:t") .. nameInput
+    elseif nameInput == "_0.pp" and SDM.isSessionSelected() == true then
+        increment = 1
     else
-        savePath = getCurrentIncrementValue(sessionDir .. nameInput .. "_0.vim", 1, ".vim")
-        shadaSavePath = getCurrentIncrementValue(sessionDir .. "shada/" .. nameInput .. "_0.shada", 1, ".shada")
+        SDM.currentSessionName = nameInput
     end
 
     vim.cmd.wall()
-    M.writeShada(shadaSavePath)
-    vim.cmd({ cmd = "mksession", args = { savePath }, bang = true })
-    M._currentSesh = savePath
-    M.setSessionDir(sessionDir)
-    M.updateStatusLine()
-    print("save path: " .. savePath)
+    M.writeShada(SDM.getFullShadaPath(increment))
+    vim.cmd({ cmd = "mksession", args = { SDM.getFullSessionPath(increment) }, bang = true })
+    SDM.currentSessionName = SDM.currentSessionName:match("^(.*[_])", 1):sub(1, -2)
+        .. "_"
+        .. SDM.getSavePathIncrementValue()
+    print("Save Path: " .. SDM.getFullSessionPath(0))
 end
 
 M.writeShada = function(filePath)
@@ -108,4 +69,4 @@ M.readShada = function(filePath)
     vim.cmd({ cmd = "rshada", args = { filePath }, bang = true })
 end
 
-return
+return M

@@ -1,38 +1,10 @@
-M = {}
-require("simple-session.readWrite")
-require("simple-session.getSessionWithUI")
-
-M._currentSesh = "/noSelectedSession."
-
-local sessionRootDir = vim.fn.expand("~/nvim_sessions")
-local sessionDir = sessionRootDir .. "/main/"
-
-local defaultKeymaps = { overwrite = "<leader>as", unique = "<leader>au", saveMenu = "<leader>aa" }
-local useCustomStatus = false
-
-M.updateStatusLine = function()
-    if useCustomStatus then
-        local currentSeshStripped = M._currentSesh:gsub("^(.*[/\\])", "")
-        local directory = M.getSessionDir():sub(1, -2):gsub("^(.*[/\\])", "")
-        vim.opt.statusline = "File: " .. "%t" .. " | Session: " .. directory .. "/" .. currentSeshStripped
-    end
-end
-
-local function setupRootDirectory(session_root_directory)
-    sessionRootDir = session_root_directory
-
-    if vim.fn.isdirectory(session_root_directory) == 0 then
-        vim.fn.mkdir(session_root_directory, "p")
-    end
-    if vim.fn.isdirectory(sessionDir) == 0 then
-        vim.fn.mkdir(sessionDir, "p")
-    end
-    if vim.fn.isdirectory(sessionDir .. "shada/") == 0 then
-        vim.fn.mkdir(sessionDir .. "shada/", "p")
-    end
-end
+local M = {}
+local readWrite = require("simple-session.readWrite")
+local UI = require("simple-session.getSessionWithUI")
+local SDM = require("simple-session.sessionDirectoryManager")
 
 local function setupKeymaps(keymaps)
+    local defaultKeymaps = { overwrite = "<leader>as", unique = "<leader>au", saveMenu = "<leader>aa" }
     for key in pairs(defaultKeymaps) do
         if keymaps[key] == nil then
             keymaps[key] = defaultKeymaps[key]
@@ -40,45 +12,40 @@ local function setupKeymaps(keymaps)
     end
 
     vim.keymap.set("n", keymaps.saveMenu, function()
-        if M._currentSesh == "/noSelectedSession." then
-            M.openSessionDirectoriesList(sessionRootDir)
+        if SDM.isSessionSelected() == false then
+            UI.openSessionRootDirectoriesUI()
         else
-            M.openSessionList(sessionDir, "----Press Enter Here To Select Dir----")
+            UI.openSessionListUI()
         end
     end, { desc = "Choose a session to return to" })
 
     vim.keymap.set("n", keymaps.overwrite, function()
-        M.overwriteSession(sessionDir)
+        readWrite.overwriteSession()
     end, { desc = "Save regular session" })
 
     vim.keymap.set("n", keymaps.unique, function()
-        M.makeUniqueSession(sessionDir)
+        readWrite.makeUniqueSession()
     end, { desc = "Create unique session" })
 
     vim.keymap.set("n", "<leader>a", "", { desc = "Simple Session" })
 end
 
-M.setSessionDir = function(opt)
-    sessionDir = opt
-end
-M.getRootSession = function()
-    return sessionRootDir
-end
-M.getSessionDir = function()
-    return sessionDir
-end
-
 M.setup = function(opts)
     opts = opts or {}
-    if opts.session_root_directory then
-        setupRootDirectory(opts.session_root_directory)
+    if opts.useCustomStatus then
+        vim.opt.statusline = "File: " .. "%t" .. " | Session: " .. SDM.getCurrentSessionName()
     end
-    if opts.keymaps then
-        setupKeymaps(opts.keymaps)
+
+    if opts.sessionRootDirectory then
+        SDM.sessionRoot = opts.session_root_directory .. "/"
     end
-    if opts.useStatusLine then
-        useCustomStatus = true
+
+    if opts.defaultDirectory then
+        SDM.currentSessionDirectoryPath = SDM.sessionRoot .. opts.defaultDirectory .. "/"
     end
+
+    SDM.setupRootDirectory()
+    setupKeymaps(opts.keymaps)
 end
 
 return M
