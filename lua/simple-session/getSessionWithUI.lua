@@ -49,7 +49,8 @@ local function setSessionListUIKeymaps()
     end, { buffer = true })
 
     vim.keymap.set("n", "D", function()
-        local selectedSession = SDM.currentSessionDirectoryPath .. vim.fn.getline(".") .. ".vim"
+        local selectedSession = rootDirectorySelection .. vim.fn.getline(".") .. ".vim"
+        print(selectedSession)
         if vim.fn.filereadable(selectedSession) == 1 then
             vim.fn.delete(selectedSession)
             vim.fn.delete(SDM.currentSessionDirectoryPath .. "shada/" .. vim.fn.getline(".") .. ".shada")
@@ -144,7 +145,8 @@ local function setRootDirectoriesUIKeymaps()
 
     vim.keymap.set("n", "Y", function()
         local tempCheck = SDM.sessionRoot .. vim.fn.getline(".") .. "/"
-        if vim.fn.isdirectory(tempCheck) == true then
+        print(tempCheck)
+        if vim.fn.isdirectory(tempCheck) == 1 then
             SDM.currentSessionDirectoryPath = tempCheck
             SDM.currentSessionName = "/none/"
             vim.api.nvim_buf_set_lines(0, 2, 3, false, { "Current Directory: " .. vim.fn.getline(".") })

@@ -32,9 +32,6 @@ end
 
 M.setup = function(opts)
     opts = opts or {}
-    if opts.useCustomStatus then
-        vim.opt.statusline = "File: " .. "%t" .. " | Session: " .. SDM.getCurrentSessionName()
-    end
 
     if opts.sessionRootDirectory then
         SDM.sessionRoot = opts.session_root_directory .. "/"
@@ -42,6 +39,20 @@ M.setup = function(opts)
 
     if opts.defaultDirectory then
         SDM.currentSessionDirectoryPath = SDM.sessionRoot .. opts.defaultDirectory .. "/"
+    end
+
+    if opts.autosaveShada == true then
+        local ssAutogroup = vim.api.nvim_create_augroup("simple-session", { clear = true })
+        vim.api.nvim_create_autocmd("VimLeavePre", {
+            desc = "Saves the shada before exiting",
+            group = ssAutogroup,
+            pattern = "*",
+            callback = function()
+                if SDM.isSessionSelected() == true then
+                    readWrite.writeShada(SDM.getFullShadaPath())
+                end
+            end,
+        })
     end
 
     SDM.setupRootDirectory()
