@@ -1,5 +1,5 @@
 local M = {}
-M.sessionRoot = vim.fn.expand("~/nvim_sessions/") --The root
+M.sessionRoot = vim.fn.stdpath("data") .. "/nvim_sessions/"
 M.currentSessionDirectoryPath = M.sessionRoot .. "Default/"
 M.currentSessionName = "/none/"
 
@@ -41,11 +41,7 @@ end
 
 M.getFullSessionPath = function(increment)
     increment = increment or 0
-    return M.currentSessionDirectoryPath
-        .. M.currentSessionName:match("^(.*[_])", 1):sub(1, -2)
-        .. "_"
-        .. M.getSavePathIncrementValue() + increment
-        .. ".vim"
+    return M.currentSessionDirectoryPath .. M.currentSessionName:match("^(.*[_])", 1):sub(1, -2) .. "_" .. M.getSavePathIncrementValue() + increment .. ".vim"
 end
 
 M.getFullShadaPath = function(increment)
@@ -57,17 +53,5 @@ M.getFullShadaPath = function(increment)
         .. M.getSavePathIncrementValue() + increment
         .. ".shada"
 end
-
---[[
-M.currentSessionDirectoryPath = vim.fn.expand("%:p:h") .. "/"
-M.currentSessionName = "Gay"
-print(M.currentSessionDirectoryPath)
-print(M.currentSessionName)
-print("Modified Name: " .. vim.fn.fnamemodify(M.currentSessionDirectoryPath, ":h:t"))
-
-print("Inc Value: " .. M.getSavePathIncrementValue())
-print(M.getFullSessionPath())
-print(M.getFullShadaPath())
-]]
 
 return M

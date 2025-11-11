@@ -22,7 +22,6 @@ local function setupKeymaps(keymaps)
     vim.keymap.set("n", keymaps.overwrite, function()
         readWrite.overwriteSession()
     end, { desc = "Save regular session" })
-
     vim.keymap.set("n", keymaps.unique, function()
         readWrite.makeUniqueSession()
     end, { desc = "Create unique session" })
